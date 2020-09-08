@@ -31,7 +31,7 @@ export default function xhr(config: AxiosRequestConfig): AxiosPromise {
     // 接口响应时间
     if (timeout) request.timeout = timeout
 
-    request.open(method.toUpperCase(), url, true)
+    request.open(method.toUpperCase(), url!, true)
 
     // 处理非 200 状态码
     function handleResponse(response: AxiosResponse) {
