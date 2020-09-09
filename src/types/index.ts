@@ -5,6 +5,11 @@ export type Method = 'get' | 'GET'
   | 'post' | 'POST'
   | 'put' | 'PUT'
   | 'patch' | 'PATCH'
+
+export interface AxiosTransformer {
+  (data: any, headers?: any): any
+}
+
 // axios 请求接口
 export interface AxiosRequestConfig {
   url?: string
@@ -14,8 +19,65 @@ export interface AxiosRequestConfig {
   headers?: any
   responseType?: XMLHttpRequestResponseType
   timeout?: number
+  transformRequest?: AxiosTransformer | AxiosTransformer[]
+  transformResponse?: AxiosTransformer | AxiosTransformer[]
+  cancelToken?: CancelToken
+  withCredentials?: boolean
+  xsrfCookieName?: string
+  xsrfHeaderName?: string
+
   [propName: string]: any
 }
+
+// CancelToken 是实例类型的接口定义
+export interface CancelToken {
+  promise: Promise<string>
+  reason?: Cancel
+
+  throwIfRequested(): void
+}
+
+// Canceler 是取消方法的接口定义
+export interface Canceler {
+  (message?: string): void
+}
+
+// CancelExecutor 是 CancelToken 类构造函数参数的接口定义
+export interface CancelExecutor {
+  (cancel: Canceler): void
+}
+
+// CancelTokenSource 作为 CancelToken 类静态方法 source 函数的返回值类型，
+export interface CancelTokenSource {
+  cancel: Canceler
+  token: CancelToken
+}
+
+// CancelTokenStatic 则作为 CancelToken 类的类类型。
+export interface CancelTokenStatic {
+  new(executor: CancelExecutor): CancelToken
+
+  source(): CancelTokenSource
+}
+
+// Cancel 是实例类型的接口定义
+export interface Cancel {
+  message?: string
+}
+
+// CancelStatic 是类类型的接口定义
+export interface CancelStatic {
+  new(message?: string): Cancel
+}
+
+export interface AxiosStatic extends AxiosInstance {
+  create(config?: AxiosRequestConfig): AxiosInstance
+
+  CancelToken: CancelTokenStatic
+  Cancel: CancelStatic
+  isCancel: (value: any) => boolean
+}
+
 // axios 响应接口
 export interface AxiosResponse<T = any> {
   data: T
@@ -25,10 +87,12 @@ export interface AxiosResponse<T = any> {
   config: AxiosRequestConfig
   request: any
 }
+
 // axios promise 泛型
 export interface AxiosPromise<T = any> extends Promise<AxiosResponse<T>> {
 
 }
+
 // axios 错误接口
 export interface AxiosError extends Error {
   config: AxiosRequestConfig
@@ -37,8 +101,16 @@ export interface AxiosError extends Error {
   response?: AxiosResponse
   isAxiosError: boolean
 }
+
 // axios接口
 export interface Axios {
+  defaults: AxiosRequestConfig
+
+  interceptors: {
+    request: AxiosInterceptorManager<AxiosRequestConfig>,
+    response: AxiosInterceptorManager<AxiosResponse>
+  }
+
   request<T = any>(config: AxiosRequestConfig): AxiosPromise<T>
 
   get<T = any>(url: string, config?: AxiosRequestConfig): AxiosPromise<T>
@@ -61,11 +133,14 @@ export interface Axios {
 // }
 
 // axios 函数重载
-export interface AxiosInstance extends Axios{
-  interceptors: any
-  <T = any>(config:AxiosRequestConfig): AxiosPromise<T>
+export interface AxiosInstance extends Axios {
+  <T = any>(config: AxiosRequestConfig): AxiosPromise<T>
 
-  <T = any>(url:string,config?: AxiosRequestConfig): AxiosPromise<T>
+  <T = any>(url: string, config?: AxiosRequestConfig): AxiosPromise<T>
+}
+
+export interface AxiosStatic extends AxiosInstance {
+  create(config?: AxiosRequestConfig): AxiosInstance
 }
 
 export interface ResolvedFn<T = any> {
@@ -77,6 +152,7 @@ export interface RejectedFn {
 }
 
 export interface AxiosInterceptorManager<T> {
+  // 返回值的 number 是这个 interceptor 的 ID 用于 eject 的时候删除此 interceptor
   use(resolved: ResolvedFn<T>, rejected?: RejectedFn): number
 
   eject(id: number): void

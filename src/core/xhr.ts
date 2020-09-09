@@ -23,14 +23,21 @@ import { createError } from '../helpers/error'
 
 export default function xhr(config: AxiosRequestConfig): AxiosPromise {
   return new Promise((resolve, reject) => {
-    const { data = null, url, method = 'get', headers, responseType, timeout } = config
+    const { data = null, url, method = 'get', headers, responseType, timeout, cancelToken, withCredentials } = config
 
     const request = new XMLHttpRequest()
 
     if (responseType) request.responseType = responseType
     // 接口响应时间
     if (timeout) request.timeout = timeout
-
+    // 使用request.abort() 取消接口
+    if(cancelToken){
+      cancelToken.promise.then(reason => {
+        request.abort()
+        reject(reason)
+      })
+    }
+    if(withCredentials) request.withCredentials = true
     request.open(method.toUpperCase(), url!, true)
 
     // 处理非 200 状态码

@@ -51,6 +51,8 @@ router.post('/base/buffer',function(req, res) {
   })
 })
 
+
+
 router.get('/error/get',function(req,res) {
   if(Math.random() > .5){
     res.json({
@@ -74,6 +76,20 @@ router.get('/interceptor/get',function(req,res) {
   res.json({
     msg:'hello13'
   })
+})
+
+router.get('/cancel/get',function(req,res) {
+  res.json({
+    msg:'hello13'
+  })
+})
+router.post('/cancel/post',function(req, res) {
+  res.json(req.body)
+})
+
+
+router.post('/config/post',function(req, res) {
+  res.json(req.body)
 })
 
 app.use(router)

@@ -8,7 +8,7 @@ import {
 } from '../types'
 import dispatchRequest from './dispatchRequest'
 import InterceptorManager from './interceptor'
-import merageConfig from './merageConfig'
+import mergeConfig from './merageConfig'
 
 interface Interceptors {
   request: InterceptorManager<AxiosRequestConfig>
@@ -19,6 +19,7 @@ interface PromiseChain {
   resolved: ResolvedFn | ((config: AxiosRequestConfig) => AxiosPromise)
   rejected?: RejectedFn
 }
+
 
 export default class Axios {
   defaults:AxiosRequestConfig
@@ -39,7 +40,7 @@ export default class Axios {
     } else {
       config = url
     }
-    config = merageConfig(this.defaults, config)
+    config = mergeConfig(this.defaults, config)
     /**
      *  构造一个 PromiseChain 类型的数组 chain，并把 dispatchRequest 函数赋值给 resolved 属性；接着先遍历请求拦截器插入到 chain 的前面；然后再遍历响应拦截器插入到 chain 后面。
      *  接下来定义一个已经 resolve 的 promise，循环这个 chain，拿到每个拦截器对象，把它们的 resolved 函数和 rejected 函数添加到 promise.then 的参数中，这样就相当于通过 Promise 的链式调用方式，实现了拦截器一层层的链式调用的效果。
@@ -111,7 +112,8 @@ export default class Axios {
       url,
       Object.assign(config || {}, {
         method,
-        url
+        url,
+        data
       })
     )
   }
