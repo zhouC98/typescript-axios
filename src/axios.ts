@@ -6,19 +6,27 @@ import mergeConfig from './core/merageConfig'
 import CancelToken from './cancel/CancelToken'
 import Cancel, { isCancel } from './cancel/Cancel'
 
-function createInstance(config:AxiosRequestConfig):AxiosStatic {
+function createInstance(config: AxiosRequestConfig): AxiosStatic {
   const context = new Axios(config)
   const instance = Axios.prototype.request.bind(context)
 
-  extend(instance,context)
+  extend(instance, context)
 
   return instance as AxiosStatic
 }
+
 const axios = createInstance(defaults)
-axios.create = function(config:AxiosRequestConfig) {
+axios.create = function(config: AxiosRequestConfig) {
   return createInstance(mergeConfig(defaults, config))
 }
-
+axios.all = function all(promises) {
+  return Promise.all(promises)
+}
+axios.spread = function spread(callback) {
+  return function wrap(arr) {
+    return callback.apply(null, arr)
+  }
+}
 
 axios.Cancel = Cancel
 axios.isCancel = isCancel

@@ -1,6 +1,9 @@
 import { AxiosPromise, AxiosRequestConfig, AxiosResponse } from '../types'
 import { parseHeaders } from '../helpers/headers'
 import { createError } from '../helpers/error'
+import { isURLSameOrigin } from '../helpers/url'
+import cookie from '../helpers/cookie'
+import { isFormData } from '../helpers/util'
 
 
 // export default function xhr(config:AxiosRequestConfig):void {
@@ -23,7 +26,22 @@ import { createError } from '../helpers/error'
 
 export default function xhr(config: AxiosRequestConfig): AxiosPromise {
   return new Promise((resolve, reject) => {
-    const { data = null, url, method = 'get', headers, responseType, timeout, cancelToken, withCredentials } = config
+    const {
+      data = null,
+      url,
+      method = 'get',
+      headers,
+      responseType,
+      timeout,
+      cancelToken,
+      withCredentials,
+      xsrfCookieName,
+      xsrfHeaderName,
+      onDownloadProgress,
+      onUploadProgress,
+      auth,
+      validateStatus
+    } = config
 
     const request = new XMLHttpRequest()
 
@@ -31,18 +49,32 @@ export default function xhr(config: AxiosRequestConfig): AxiosPromise {
     // 接口响应时间
     if (timeout) request.timeout = timeout
     // 使用request.abort() 取消接口
-    if(cancelToken){
+    if (cancelToken) {
       cancelToken.promise.then(reason => {
         request.abort()
         reject(reason)
       })
     }
-    if(withCredentials) request.withCredentials = true
+    if (withCredentials) request.withCredentials = true
     request.open(method.toUpperCase(), url!, true)
 
+    if ((withCredentials || isURLSameOrigin(url!)) && xsrfCookieName) {
+      const xsrfValue = cookie.read(xsrfCookieName)
+      if (xsrfValue) headers[xsrfHeaderName!] = xsrfValue
+    }
+
+    if (onDownloadProgress) request.onprogress = onDownloadProgress
+
+    if (onUploadProgress) request.upload.onprogress = onUploadProgress
+
+    if (auth) headers['Authorization'] = 'Basic ' + btoa(auth.username + ':' + auth.password)
+
+    if (isFormData(data)) delete headers['Content-Type']
+
+
     // 处理非 200 状态码
-    function handleResponse(response: AxiosResponse) {
-      if (response.status >= 200 && response.status < 300) {
+    function handleResponse(response: AxiosResponse): void {
+      if(!validateStatus || validateStatus(response.status)){
         resolve(response)
       } else {
         reject(createError(

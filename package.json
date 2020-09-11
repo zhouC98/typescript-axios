@@ -50,7 +50,7 @@
     "transform": {
       ".(ts|tsx)": "ts-jest"
     },
-    "testEnvironment": "node",
+    "testEnvironment": "jsdom",
     "testRegex": "(/__tests__/.*|\\.(test|spec))\\.(ts|tsx|js)$",
     "moduleFileExtensions": [
       "ts",
@@ -70,7 +70,11 @@
       }
     },
     "collectCoverageFrom": [
-      "src/*.{js,ts}"
+      "src/*.{js,ts}",
+      "src/**/*.{js,ts}"
+    ],
+    "setupFilesAfterEnv": [
+      "<rootDir>/test/boot.ts"
     ]
   },
   "prettier": {
@@ -119,9 +123,12 @@
     "typescript": "^3.0.3"
   },
   "dependencies": {
+    "atob": "^2.1.2",
     "body-parser": "^1.19.0",
+    "connect-multiparty": "^2.2.0",
     "cookie-parser": "^1.4.5",
     "express": "^4.17.1",
+    "nprogress": "^0.2.0",
     "qs": "^6.9.4",
     "ts-loader": "^8.0.3",
     "tslint-loader": "^3.5.4",

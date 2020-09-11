@@ -6,9 +6,10 @@ import {
   RejectedFn,
   ResolvedFn
 } from '../types'
-import dispatchRequest from './dispatchRequest'
+import dispatchRequest, { transformUrl } from './dispatchRequest'
 import InterceptorManager from './interceptor'
 import mergeConfig from './merageConfig'
+import transform from './transform'
 
 interface Interceptors {
   request: InterceptorManager<AxiosRequestConfig>
@@ -22,7 +23,7 @@ interface PromiseChain {
 
 
 export default class Axios {
-  defaults:AxiosRequestConfig
+  defaults: AxiosRequestConfig
   interceptors: Interceptors
 
   constructor(initConfig: AxiosRequestConfig) {
@@ -35,7 +36,7 @@ export default class Axios {
 
   request(url: any, config?: any): AxiosPromise {
     if (typeof url === 'string') {
-      if (!config) config = { url }
+      if (!config) config = {}
       config.url = url
     } else {
       config = url
@@ -61,9 +62,9 @@ export default class Axios {
 
     let promise = Promise.resolve(config)
 
-    while (chain.length){
+    while (chain.length) {
       const { resolved, rejected } = chain.shift()!
-      promise = promise.then(resolved , rejected)
+      promise = promise.then(resolved, rejected)
     }
 
     return promise
@@ -74,27 +75,27 @@ export default class Axios {
   }
 
   delete(url: string, config?: AxiosRequestConfig): AxiosPromise {
-    return this._requestMethodWithoutData('get', url, config)
+    return this._requestMethodWithoutData('delete', url, config)
   }
 
   head(url: string, config?: AxiosRequestConfig): AxiosPromise {
-    return this._requestMethodWithoutData('get', url, config)
+    return this._requestMethodWithoutData('head', url, config)
   }
 
   options(url: string, config?: AxiosRequestConfig): AxiosPromise {
-    return this._requestMethodWithoutData('get', url, config)
+    return this._requestMethodWithoutData('options', url, config)
   }
 
   post(url: string, data?: any, config?: AxiosRequestConfig): AxiosPromise {
-    return this._requestMethodWithData('get', url, data, config)
+    return this._requestMethodWithData('post', url, data, config)
   }
 
   put(url: string, data?: any, config?: AxiosRequestConfig): AxiosPromise {
-    return this._requestMethodWithData('get', url, data, config)
+    return this._requestMethodWithData('put', url, data, config)
   }
 
   patch(url: string, data?: any, config?: AxiosRequestConfig): AxiosPromise {
-    return this._requestMethodWithData('get', url, data, config)
+    return this._requestMethodWithData('patch', url, data, config)
   }
 
   _requestMethodWithoutData(method: Method, url: string, config?: AxiosRequestConfig) {
@@ -116,5 +117,10 @@ export default class Axios {
         data
       })
     )
+  }
+
+  getUri(config?: AxiosRequestConfig): string {
+    config = mergeConfig(this.defaults, config)
+    return transformUrl(config)
   }
 }

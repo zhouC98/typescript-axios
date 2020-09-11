@@ -1,4 +1,4 @@
-import { isDate, isPlainObject } from './util'
+import { isDate, isPlainObject, isURLSearchParams } from './util'
 
 function encode(val: string): string {
   // 将一个，两个，三个或四个表示字符的UTF-8编码的转义序列替换某些字符的每个实例来编码 URI
@@ -14,38 +14,44 @@ function encode(val: string): string {
     .replace(/%5D/gi, ']')
 }
 
-export function buildURL(url: string, params?: any) {
+export function buildURL(url: string, params?: any, paramsSerializer?: (params: any) => string): string {
   if (!params) return url
+  let serializedParams
+  if (paramsSerializer) {
+    serializedParams = paramsSerializer(params)
+  } else if (isURLSearchParams(params)) {
+    serializedParams = params.toString()
+  } else {
+    const parts: string[] = []
 
-  const parts: string[] = []
+    Object.keys(params).forEach(key => {
+      let val = params[key]
+      // 处理参数值为null || undefined的情况
+      if (val === null || typeof val === 'undefined') return
 
-  Object.keys(params).forEach(key => {
-    let val = params[key]
-    // 处理参数值为null || undefined的情况
-    if (val === null || typeof val === 'undefined') return
+      let values: string[]
 
-    let values: string[]
-
-    if (Array.isArray(val)) {
-      values = val
-      key += '[]'
-    } else {
-      values = [val]
-    }
-
-    values.forEach(val => {
-      // 处理值为时间，对象的情况
-      if (isDate(val)) {
-        val = val.toISOString()
-      } else if (isPlainObject(val)) {
-        val = JSON.stringify(val)
+      if (Array.isArray(val)) {
+        values = val
+        key += '[]'
+      } else {
+        values = [val]
       }
-      // 把参数跟值拼接好
-      parts.push(`${encode(key)}=${encode((val))}`)
-    })
-  })
 
-  let serializedParams = parts.join('&')
+      values.forEach(val => {
+        // 处理值为时间，对象的情况
+        if (isDate(val)) {
+          val = val.toISOString()
+        } else if (isPlainObject(val)) {
+          val = JSON.stringify(val)
+        }
+        // 把参数跟值拼接好
+        parts.push(`${encode(key)}=${encode((val))}`)
+      })
+    })
+
+    serializedParams = parts.join('&')
+  }
 
   if (serializedParams) {
     // 处理url后面带hash值的情况
@@ -58,3 +64,28 @@ export function buildURL(url: string, params?: any) {
   return url
 }
 
+interface URLOrigin {
+  protocol: string
+  host: string
+}
+
+const urlParsingNode = document.createElement('a')
+const currentOrigin = resolveURL(window.location.href)
+
+
+export function isURLSameOrigin(requestURL: string): boolean {
+  const parsedOrigin = resolveURL(requestURL)
+  return (
+    parsedOrigin.protocol === currentOrigin.protocol && parsedOrigin.host === currentOrigin.host
+  )
+}
+
+function resolveURL(url: string): URLOrigin {
+  urlParsingNode.setAttribute('href', url)
+  const { protocol, host } = urlParsingNode
+
+  return {
+    protocol,
+    host
+  }
+}
